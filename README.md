@@ -1,4 +1,4 @@
-# promanage
+# Guide d'utilisation rapide (Projet GL fait par MOUKTAR HOUSSEN Shams Ryan et Hayat MEGHLAT)
 
 This template should help get you started developing with Vue 3 in Vite.
 
