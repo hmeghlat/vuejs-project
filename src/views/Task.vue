@@ -314,7 +314,7 @@ export default {
             username: this.user.username,
             nom_projet: project.name,
           });
-
+            console.log("aaaaaaaaaaaaaa  ",response.data.tasks);
           for (const task of response.data.tasks) {
             // Appel à l'API pour récupérer les membres assignés à la tâche
             const membersResponse = await axios.post(
@@ -349,36 +349,70 @@ export default {
     },
 
     async saveTask() {
-      if (!this.hasPermission("create")) {
-        alert("Vous n'avez pas la permission de créer une tâche.");
-        return;
-      }
+  if (!this.hasPermission("create")) {
+    alert("Vous n'avez pas la permission de créer une tâche.");
+    return;
+  }
 
-      try {
-        const payload = {
-          username: this.user.username,
-          task_name: this.currentTask.task_name,
-          nom_projet: this.currentTask.nom_projet,
-          description: this.currentTask.description,
-          priority: this.currentTask.priority,
-          status: this.currentTask.status,
-          date_echeance: this.currentTask.date_echeance,
-          assigned_to: this.assignedToInput.split(",").map((m) => m.trim()),
-        };
-        const response = await axios.post("http://127.0.0.1:5000/task/create", payload);
-        if (response.status === 201) {
-          alert("Tâche créée avec succès !");
-          this.closeModal();
-          this.fetchTasks();
-        } else {
-          alert(response.data.message || "Erreur lors de la création de la tâche.");
-        }
-      } catch (error) {
-        console.error("Erreur lors de la création de la tâche :", error);
-      }
-    },
+  // Vérification des champs obligatoires
+  if (
+    !this.currentTask.task_name ||
+    !this.currentTask.nom_projet ||
+    !this.currentTask.priority ||
+    !this.currentTask.date_echeance
+  ) {
+    alert("Veuillez remplir tous les champs obligatoires.");
+    return;
+  }
 
-    async updateTaskState(taskName, newStatus) {
+  // Vérification du format de la date
+  const dueDate = new Date(this.currentTask.date_echeance);
+  if (isNaN(dueDate.getTime())) {
+    alert("La date d'échéance est invalide. Veuillez utiliser le format AAAA-MM-JJ.");
+    return;
+  }
+
+  // Préparation de la liste des utilisateurs assignés
+  const assignedToArray = this.assignedToInput
+    .split(",")
+    .map((member) => member.trim()) // Supprime les espaces
+    .filter((member) => member); // Supprime les valeurs vides
+
+  if (assignedToArray.length === 0) {
+    alert("Veuillez assigner la tâche à au moins un utilisateur.");
+    return;
+  }
+
+  // Préparation des données pour le backend
+  const payload = {
+    username: this.user.username,
+    task_name: this.currentTask.task_name.trim(),
+    nom_projet: this.currentTask.nom_projet.trim(),
+    description: this.currentTask.description.trim(),
+    priority: this.currentTask.priority,
+    status: this.currentTask.status,
+    date_echeance: this.currentTask.date_echeance,
+    assigned_to: assignedToArray, // Liste des utilisateurs assignés
+  };
+
+  console.log("Payload envoyé :", payload); // Debug
+
+  try {
+    const response = await axios.post("http://127.0.0.1:5000/task/create", payload);
+    if (response.status === 201) {
+      alert("Tâche créée avec succès !");
+      this.closeModal();
+      this.fetchTasks();
+    } else {
+      console.error("Erreur lors de la création de la tâche :", response.data);
+      alert(response.data.message || "Erreur lors de la création de la tâche.");
+    }
+  } catch (error) {
+    console.error("Erreur lors de la création de la tâche :", error);
+    alert("Une erreur est survenue lors de la création de la tâche.");
+  }
+},
+async updateTaskState(taskName, newStatus) {
       if (!this.hasPermission("edit")) {
         alert("Vous n'avez pas la permission de modifier cette tâche.");
         return;
@@ -400,6 +434,7 @@ export default {
         console.error("Erreur lors de la mise à jour de l'état de la tâche :", error);
       }
     },
+
 
     async addDependency() {
       try {
