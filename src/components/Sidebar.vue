@@ -24,7 +24,17 @@
       <div class="nav-button">
         <i class="fas fa-tasks"></i><span>Taches</span>
       </div>
+      </router-link>
+      <router-link to="/users" class="nav-button-link">
+      <div class="nav-button">
+        <i class="fas fa-tasks"></i><span>Liste des Utilisateurs</span>
+      </div>
     </router-link>
+    <div v-if="user.role === 'administrateur'" class="admin-actions">
+        <button @click="goToRoleManagement" class="btn-role-btn">
+          Gérer les Rôles
+        </button>
+      </div>
 
       
     </div>
@@ -53,7 +63,7 @@
       user: {
         username: "John Doe",  // Par défaut ou récupéré de localStorage
         role: "Admin",         // Par défaut ou récupéré de localStorage
-        avatar: "https://gravatar.com/avatar/4474ca42d303761c2901fa819c4f2547",  // Par défaut ou récupéré de localStorage
+       
       },
     };
   },
@@ -68,138 +78,190 @@
     handleToggle() {
       this.$emit("toggle"); // Émet un événement vers le parent
     },
+
+    goToRoleManagement() {
+      this.$router.push("/role-management");
+    },
   },
 };
 
   </script>
-  
-  <style scoped>
-  #nav-bar {
-  width: 0;
-  background: linear-gradient(to bottom, #FF4B2B, #FF416C); /* Dégradé cohérent avec la page login */
-  height: 100vh;
-  padding: 40px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  transition: width 0.3s ease;
-  z-index: 1000;
-  overflow: hidden;
-}
-
-#nav-bar.open {
-  width: 300px; /* Augmenter la largeur de la sidebar */
-}
-
-#nav-toggle-container {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  z-index: 2000;
-}
-
-#nav-toggle-button {
-  background: none;
-  border: none;
-  color: #FFFFFF; /* Blanc pour s'harmoniser avec le dégradé */
-  font-size: 30px;
-  cursor: pointer;
-}
-
-#nav-header {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-#nav-title {
-  font-size: 24px; /* Augmenter la taille */
-  font-weight: bold;
-  color: #FFFFFF; /* Couleur blanche */
-  text-transform: uppercase;
-  text-align: right; /* Aligner vers la droite */
-  margin-left: auto; /* Déplacer vers la droite */
-  margin-right: 20px; /* Espacement à droite */
-  letter-spacing: 2px; /* Espacement des lettres pour un effet élégant */
-  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5); /* Ajouter une ombre pour du relief */
-  transition: transform 0.3s ease, color 0.3s ease; /* Transition pour l'effet hover */
-}
-
-#nav-title:hover {
-  transform: scale(1.1); /* Légère mise en avant au survol */
-  color: #FFDFDF; /* Couleur plus claire au survol */
-}
-
-#nav-content {
-  margin-top: 20px;
-}
-
-.nav-button {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
-  padding: 10px;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
-  gap: 10px; 
-}
-
-.nav-button:hover {
-  background-color: rgba(255, 255, 255, 0.2); /* Couleur semi-transparente au hover */
-}
-
-.nav-button i {
-  font-size: 20px;
-  color: #FFFFFF; /* Icônes en blanc */
-}
-
-.nav-button span {
-  font-size: 16px;
-  font-weight: bold;
-  color: #FFFFFF; /* Texte blanc pour correspondre au design */
-}
-
-#nav-footer {
-  margin-top: 30px;
-}
-
-#nav-footer-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-
-#nav-footer-titlebox {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-#nav-footer-title {
-  font-weight: bold;
-  color: #FFFFFF; /* Nom d'utilisateur en blanc */
-  font-size: 14px;
-}
-
-#nav-footer-subtitle {
-  font-size: 12px;
-  color: #FFDFDF; /* Sous-titre légèrement plus clair */
-}
-
-hr {
-  border: 1px solid rgba(255, 255, 255, 0.3); /* Ligne de séparation semi-transparente */
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
-/* Styles pour un design responsive */
-@media (max-width: 768px) {
-  #nav-bar {
-    width: 100%;
-  }
-}
-
-</style>
-  
+ 
+ <style scoped>
+ /* Conteneur principal */
+ #nav-bar {
+   width: 0;
+   background: linear-gradient(to bottom, #FF4B2B, #FF416C); /* Conserve le dégradé rouge actuel */
+   height: 100vh;
+   padding: 20px 30px;
+   position: fixed;
+   top: 0;
+   left: 0;
+   transition: width 0.3s ease;
+   z-index: 1000;
+   overflow: hidden;
+   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Ombre douce */
+ }
+ 
+ #nav-bar.open {
+   width: 250px; /* Largeur de la sidebar ouverte */
+ }
+ 
+ /* Bouton de bascule */
+ #nav-toggle-container {
+   position: absolute;
+   top: 15px;
+   left: 15px;
+   z-index: 2000;
+ }
+ 
+ #nav-toggle-button {
+   background: none;
+   border: none;
+   color: #FFFFFF;
+   font-size: 30px;
+   cursor: pointer;
+   transition: transform 0.3s ease, opacity 0.3s ease;
+ }
+ 
+ #nav-toggle-button:hover {
+   transform: scale(1.1); /* Mise en avant au survol */
+   opacity: 0.8; /* Légère transparence */
+ }
+ 
+ /* En-tête */
+ #nav-header {
+   display: flex;
+   flex-direction: row; /* Aligner horizontalement le bouton et le titre */
+   align-items: center; /* Alignement vertical centré */
+   padding: 15px 0;
+   margin-bottom: 20px;
+   gap: 15px; /* Espacement entre le bouton et le titre */
+ }
+ 
+ #nav-title {
+   font-size: 24px;
+   font-weight: bold;
+   color: #FFFFFF;
+   text-transform: uppercase;
+   letter-spacing: 1px;
+   text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3); /* Ombre subtile */
+   transition: transform 0.3s ease, opacity 0.3s ease;
+   white-space: nowrap; /* Évite que le titre se coupe sur plusieurs lignes */
+ }
+ 
+ #nav-title:hover {
+   transform: scale(1.1);
+   opacity: 0.9;
+ }
+ 
+ /* Contenu */
+ #nav-content {
+   margin-top: 20px;
+ }
+ 
+ .nav-button-link {
+   text-decoration: none;
+ }
+ 
+ .nav-button {
+   display: flex;
+   align-items: center;
+   padding: 12px 15px;
+   margin-bottom: 15px;
+   border-radius: 8px;
+   background-color: rgba(255, 255, 255, 0.1); /* Fond semi-transparent */
+   transition: background-color 0.3s ease, transform 0.2s ease;
+ }
+ 
+ .nav-button:hover {
+   background-color: rgba(255, 255, 255, 0.3); /* Fond plus lumineux au survol */
+   transform: translateX(5px); /* Déplacement subtil à droite */
+ }
+ 
+ .nav-button i {
+   font-size: 18px;
+   color: #FFFFFF;
+   margin-right: 10px;
+ }
+ 
+ .nav-button span {
+   font-size: 16px;
+   font-weight: bold;
+   color: #FFFFFF;
+ }
+ 
+ /* Footer */
+ #nav-footer {
+   margin-top: 30px;
+   border-top: 1px solid rgba(255, 255, 255, 0.2);
+   padding-top: 15px;
+ }
+ 
+ #nav-footer-titlebox {
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+ }
+ 
+ #nav-footer-title {
+   font-weight: bold;
+   color: #FFFFFF;
+   font-size: 16px;
+ }
+ 
+ #nav-footer-subtitle {
+   font-size: 14px;
+   color: #FFDFDF; /* Couleur légèrement plus claire */
+ }
+ 
+ /* Bouton pour administrateur */
+ .btn-role-btn {
+   background: #ff9800;
+   color: white;
+   padding: 10px 15px;
+   border-radius: 8px;
+   font-size: 14px;
+   cursor: pointer;
+   margin-top: 15px;
+   transition: background 0.3s ease, transform 0.2s ease;
+   display: block;
+   width: 100%;
+   text-align: center;
+   border: none;
+ }
+ 
+ .btn-role-btn:hover {
+   background: #e68900;
+   transform: scale(1.05);
+ }
+ 
+ /* Responsive */
+ @media (max-width: 768px) {
+   #nav-bar {
+     width: 100%;
+     height: auto;
+     padding: 10px 20px;
+   }
+ 
+   #nav-title {
+     font-size: 20px;
+     text-align: center;
+     margin: 0 auto;
+   }
+ 
+   .nav-button {
+     justify-content: center;
+   }
+ 
+   .nav-button span {
+     display: none; /* Masquer les textes pour les petits écrans */
+   }
+ 
+   .btn-role-btn {
+     font-size: 12px;
+     padding: 8px;
+   }
+ }
+ </style>
+ 

@@ -3,6 +3,8 @@ import Login from '../views/Login.vue'; // Chemin d'accès vers Login
 import Dashboard from '../views/Dashbord.vue';
 import Project from '../views/Project.vue';
 import Task from '@/views/Task.vue';
+import RoleManagement from "../views/RoleManagement.vue";
+import UserList from "../views/UserList.vue";
 
 const routes = [
   {
@@ -32,6 +34,18 @@ const routes = [
     path: '/task', 
     name: 'Task',
     component: Task,
+  },
+
+  {
+    path: "/role-management",
+    name: "RoleManagement",
+    component: RoleManagement,
+  },
+
+  {
+    path: "/users",
+    name: "UserList",
+    component: UserList,
   },
 ];
 

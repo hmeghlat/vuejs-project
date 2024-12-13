@@ -16,33 +16,41 @@
         <span v-for="day in daysOfWeek" :key="day">{{ day }}</span>
       </div>
       <div class="dates">
-        <!-- Affichage des jours du mois -->
         <button
-        v-for="(day, index) in days"
-        :key="index"
-        :class="['date', { faded: day.isFaded, 'current-day': day.isToday }]"
-      >
-        {{ day.number }}
+          v-for="(day, index) in days"
+          :key="index"
+          :class="[
+            'date',
+            { faded: day.isFaded, 'current-day': day.isToday, 'end-date': day.isProjectEnd }
+          ]"
+        >
+          {{ day.number }}
         </button>
-
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import axios from "axios"; // Importation d'axios
+
 export default {
   name: "Schedule",
   data() {
     const today = new Date();
     return {
+      user: {
+        username: "",
+        role: "",
+      },
       currentYear: today.getFullYear(),
-      currentMonth: today.getMonth(), // Index 0 (janvier) à 11 (décembre)
+      currentMonth: today.getMonth(),
       daysOfWeek: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
       months: [
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December",
       ],
+      projectEndDates: [], // Les dates de fin des projets
     };
   },
   computed: {
@@ -56,7 +64,7 @@ export default {
       const daysInMonth = lastDayOfMonth.getDate();
 
       // Nombre de jours du mois précédent à afficher
-      const startWeekday = (firstDayOfMonth.getDay() + 6) % 7; // Ajuste pour que lundi soit le premier
+      const startWeekday = (firstDayOfMonth.getDay() + 6) % 7;
       const previousMonthDays = new Date(
         this.currentYear,
         this.currentMonth,
@@ -68,11 +76,19 @@ export default {
         days.push({
           number: previousMonthDays - i + 1,
           isFaded: true,
+          isProjectEnd: false,
         });
       }
 
       // Ajouter les jours du mois en cours
       for (let i = 1; i <= daysInMonth; i++) {
+        const isProjectEnd = this.projectEndDates.some(
+          (date) =>
+            date.day === i &&
+            date.month === this.currentMonth + 1 &&
+            date.year === this.currentYear
+        );
+
         days.push({
           number: i,
           isFaded: false,
@@ -80,6 +96,7 @@ export default {
             i === new Date().getDate() &&
             this.currentMonth === new Date().getMonth() &&
             this.currentYear === new Date().getFullYear(),
+          isProjectEnd,
         });
       }
 
@@ -89,13 +106,66 @@ export default {
         days.push({
           number: i,
           isFaded: true,
+          isProjectEnd: false,
         });
       }
 
       return days;
     },
   },
+  created() {
+    this.loadUser();
+    this.fetchProjects();
+  },
   methods: {
+    loadUser() {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        if (storedUser && storedUser.username && storedUser.role) {
+          this.user.username = storedUser.username;
+          this.user.role = storedUser.role;
+        } else {
+          alert("Utilisateur non connecté !");
+          this.$router.push("/login");
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'utilisateur :", error);
+        this.$router.push("/login");
+      }
+    },
+
+    async fetchProjects() {
+      try {
+        const response = await axios.post("http://127.0.0.1:5000/project/display", {
+          username: this.user.username,
+          display_type: "projects",
+        });
+
+        if (response.status === 200 && Array.isArray(response.data.projects)) {
+          console.log("Données brutes des projets :", response.data.projects);
+
+          // Extraire les dates de fin des projets et les formater
+          this.projectEndDates = response.data.projects.map((project) => {
+            const endDate = new Date(project.end_date); // Utilise `end_date` comme clé
+            if (!project.end_date || isNaN(endDate)) {
+              console.warn(`Problème de données pour le projet :`, project);
+              return null; // Ignorer les projets avec des dates invalides
+            }
+            return {
+              day: endDate.getDate(),
+              month: endDate.getMonth() + 1, // Les mois commencent à 0
+              year: endDate.getFullYear(),
+            };
+          }).filter(Boolean); // Supprime les valeurs nulles
+          console.log("Dates de fin des projets chargées :", this.projectEndDates);
+        } else {
+          console.error("Erreur lors de la récupération des projets :", response.data);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des projets :", error);
+      }
+    },
+
     previousMonth() {
       if (this.currentMonth === 0) {
         this.currentMonth = 11;
@@ -116,14 +186,15 @@ export default {
 };
 </script>
 
+
 <style scoped>
-/* Identique à la version précédente */
+/* Identique à la version précédente, avec une nouvelle classe */
 .calendar {
   background: linear-gradient(135deg, #fff, #f5f7fa);
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 15px;
-  width: 250px; /* Taille réduite */
+  width: 250px;
   font-family: "Arial", sans-serif;
 }
 
@@ -131,7 +202,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px; /* Espace réduit */
+  margin-bottom: 10px;
 }
 
 .month-navigation {
@@ -204,4 +275,9 @@ export default {
 .faded {
   color: #bbb;
 }
+.end-date {
+  background-color: red;
+  color: white;
+}
+
 </style>

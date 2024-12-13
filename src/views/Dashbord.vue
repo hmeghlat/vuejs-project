@@ -2,19 +2,27 @@
   <div :class="['dashboard', { 'sidebar-open': isSidebarOpen }]">
     <!-- Passer l'état et écouter l'événement -->
     <Sidebar :isOpen="isSidebarOpen" @toggle="toggleSidebar" />
+    <!-- Contenu principal -->
     <div class="main-content">
-      <div class="task-list">
-        <TaskList />
-      </div>
-      <div class="project-list">
-        <ProjectList />
-      </div>
-
-    </div>
-    <div class="agenda">
-          <Schedule />
+      <div class="horizontal-container">
+        <div class="task-list">
+          <TaskList class="dashboard-item" />
         </div>
+        <div class="project-list">
+          <ProjectList class="dashboard-item" />
+        </div>
+        <div class="notification-list">
+          <NotificationList class="dashboard-item" />
+        </div>
+        <div class="agenda">
+          <Schedule class="dashboard-item" />
+        </div>
+        
+      </div>
+    </div>
+    
   </div>
+  
 </template>
 
 <script>
@@ -22,6 +30,7 @@ import Sidebar from "../components/Sidebar.vue";
 import TaskList from "../components/TaskList.vue";
 import Schedule from "../components/Schedule.vue";
 import ProjectList from "../components/ProjectList.vue";
+import NotificationList from "../components/notification.vue";
 
 export default {
   name: "Dashboard",
@@ -30,6 +39,7 @@ export default {
     TaskList,
     Schedule,
     ProjectList,
+    NotificationList,
   },
   data() {
     return {
@@ -55,12 +65,16 @@ export default {
   },
 };
 </script>
+
 <style scoped>
 /* Layout principal */
 .dashboard {
   display: flex;
-  height: 100vh;
-  overflow: hidden;
+  flex-direction: column; /* Permet un meilleur contrôle du contenu */
+  height: 100vh; /* Définit une hauteur de vue complète */
+  overflow-y: auto; /* Active le défilement vertical si nécessaire */
+  overflow-x: hidden; /* Évite un défilement horizontal inutile */
+  background-color: #f9fafb; /* Couleur de fond */
 }
 
 /* Sidebar */
@@ -86,52 +100,51 @@ export default {
 
 /* Main content */
 .main-content {
+  margin-left: 0; /* Défaut sans sidebar */
+  padding: 20px;
   display: flex;
   flex-grow: 1;
-  flex-wrap: wrap; /* Permet de s'adapter sur plusieurs lignes si nécessaire */
-  margin-left: 0;
-  padding: 20px;
-  gap: 20px;
-  transition: margin-left 0.3s ease; /* Transition pour le déplacement */
+  overflow: auto; /* Ajoute le défilement si nécessaire */
+  overflow-x: auto;
+  transition: margin-left 0.3s ease; /* Animation pour le déplacement */
 }
 
 .sidebar-open .main-content {
   margin-left: 250px; /* Décalage égal à la largeur de la sidebar */
 }
 
-/* Task List */
-.task-list {
-  flex: 2; /* Priorité plus grande pour occuper de l'espace */
+/* Conteneur horizontal pour les composants */
+.horizontal-container {
+  display: flex;
+  justify-content: space-between; /* Espace entre les composants */
+  align-items: flex-start; /* Aligne les éléments en haut */
+  gap: 20px; /* Espacement entre les éléments */
+  flex-wrap: nowrap; /* Empêche les composants de s'empiler */
+  width: 100%;
+  overflow-x: auto; /* Active le défilement horizontal si nécessaire */
+}
+
+/* Composants individuels */
+.dashboard-item {
+  flex: 1; /* Chaque composant prend un espace égal */
   background-color: #fff;
   border-radius: 8px;
   padding: 15px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  min-width: 300px; /* Taille minimale pour les composants */
 }
 
-/* Agenda */
+.task-list,
+.project-list,
+.notification-list,
 .agenda {
-  flex: 1; /* Taille plus petite pour occuper moins d'espace */
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  position: relative; /* Assure que l'agenda reste bien placé */
-  z-index: 5; /* Priorité basse pour qu'il n'interfère pas avec la sidebar */
-}
-
-/* Project List */
-.project-list {
-  flex: 2;
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  flex: 1; /* Assure une distribution égale des composants */
 }
 
 /* Responsiveness pour les petits écrans */
 @media (max-width: 768px) {
   .main-content {
-    flex-direction: column; /* S'empile sur de petits écrans */
+    flex-direction: column; /* Les composants s'empilent sur de petits écrans */
   }
   .sidebar-open .main-content {
     margin-left: 0; /* Désactive le glissement sur les petits écrans */

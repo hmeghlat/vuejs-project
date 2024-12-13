@@ -39,9 +39,7 @@
           <p class="text-sm">
             <strong>Fin :</strong> {{ project.end_date }}
           </p>
-          <p class="text-sm">
-            <strong>Membres :</strong> {{ project.members.join(", ") }}
-          </p>
+          
           <p class="text-sm">
             <strong>État :</strong>
             <span
@@ -54,6 +52,18 @@
               {{ project.state }}
             </span>
           </p>
+          <!-- Rapport de temps -->
+        <div v-if="project.timeReport" class="time-report mt-2">
+          <p class="text-sm">
+            <strong>Temps Total :</strong> {{ project.timeReport.total_time_minutes }} minutes
+          </p>
+          <ul class="text-sm">
+            <strong>Détails :</strong>
+            <li v-for="(entry, index) in project.timeReport.time_entries" :key="index">
+              {{ entry.username }} : {{ entry.duration_minutes }} minutes
+            </li>
+          </ul>
+        </div>
         </div>
       </div>
     </div>
@@ -115,12 +125,15 @@
   
           // Vérifier si le backend retourne un tableau de projets
           if (response.data && Array.isArray(response.data.projects)) {
-           
-            this.projects = response.data.projects.map((project) => ({
-                    ...project,
-                    members: project.members || [], // Définit un tableau vide si `members` est manquant
-                    
-                }));
+          this.projects = await Promise.all(
+            response.data.projects.map(async (project) => {
+              const timeReport = await this.fetchTimeReport(project.name);
+              return {
+                ...project,
+                timeReport,
+              };
+            })
+          );
                 
             
             const projectNames = this.projects.map((project) => project.name);
@@ -132,72 +145,155 @@
           console.error("Erreur lors de la récupération des projets :", error);
         }
       },
+
+      // Récupérer le rapport de temps d'un projet
+    async fetchTimeReport(projectName) {
+      try {
+        const payload = {
+          username: this.username,
+          project_name: projectName,
+        };
+        const response = await axios.post("http://127.0.0.1:5000/project/report/time", payload);
+        return response.data;
+      } catch (error) {
+        console.error(`Erreur lors de la récupération du rapport de temps pour ${projectName} :`, error);
+        return null;
+      }
+    },
+  
+
     },
   };
+
+  
   </script>
   
   <style scoped>
-  .project-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    height: 100vh; 
-    overflow-y: auto;
-  }
-  
+/* Conteneur principal */
+.project-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background-color: #f7f9fc; /* Couleur de fond douce et moderne */
+  height: 100vh;
+  overflow-y: auto;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Message aucun projet */
+.text-center {
+  font-size: 18px;
+  color: #718096;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Carte de projet */
+.project-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Icône */
+.icon-container {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ebf8ff;
+  border-radius: 50%;
+}
+
+.icon-container svg {
+  width: 32px;
+  height: 32px;
+  color: #3182ce;
+}
+
+/* Détails */
+.details {
+  flex-grow: 1;
+}
+
+.details h3 {
+  font-size: 20px;
+  font-weight: bold;
+  color: #2c5282;
+  margin-bottom: 10px;
+}
+
+.details p {
+  font-size: 14px;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.details p strong {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* État du projet */
+.text-green-600 {
+  color: #38a169; /* En cours */
+}
+
+.text-red-600 {
+  color: #e53e3e; /* Terminé */
+}
+
+.text-yellow-600 {
+  color: #d69e2e; /* En attente */
+}
+
+/* Rapport de temps */
+.time-report {
+  margin-top: 15px;
+  background-color: #edf2f7;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.time-report p {
+  font-size: 14px;
+  color: #2d3748;
+  margin-bottom: 5px;
+}
+
+.time-report ul {
+  padding-left: 20px;
+}
+
+.time-report ul li {
+  font-size: 14px;
+  color: #4a5568;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
   .project-card {
-    display: flex;
-    align-items: flex-start;
-    background-color: #ffffff;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    flex-direction: column;
   }
-  
-  .project-card:hover {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-    transform: translateY(-3px);
-  }
-  
+
   .icon-container {
-    flex-shrink: 0;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin-bottom: 15px;
   }
-  
-  .details {
-    flex-grow: 1;
-  }
-  
-  .details h3 {
-    margin: 0;
-    font-size: 1.25rem;
-  }
-  
-  .details p {
-    margin: 0.25rem 0;
-    font-size: 0.875rem;
-    color: #4a5568;
-  }
-  
-  .text-green-600 {
-    color: #10b981;
-  }
-  
-  .text-red-600 {
-    color: #ef4444;
-  }
-  
-  .text-yellow-600 {
-    color: #f59e0b;
-  }
-  
-  .text-center {
-    text-align: center;
-  }
-  </style>
-  
+}
+</style>

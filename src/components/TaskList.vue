@@ -9,9 +9,6 @@
       <div v-for="(task, index) in filteredTasks" :key="index" class="card">
         <div class="d-flex justify-content-between">
           <div class="d-flex align-items-center">
-            <div class="icon">
-              <i class="bx bx-task"></i>
-            </div>
             <div class="c-details">
               <h6 class="task-name">{{ task.task_name }}</h6>
               <span class="project-name"><strong>Projet :</strong> {{ task.nom_projet || "Non spécifié" }}</span>
@@ -28,12 +25,20 @@
           <p class="description">{{ task.description || "Pas de description disponible" }}</p>
           <div class="task-stats">
             <span><strong>Status :</strong> {{ task.status || "Non spécifié" }}</span>
-            <span>
-              <strong>Assigné à :</strong>
-              {{ task.assigned_to && task.assigned_to.length > 0 ? task.assigned_to.join(", ") : "Non assigné" }}
-            </span>
+            <button @click="toggleComments(task.task_name)" class="btn comment-btn">
+              {{ taskComments[task.task_name] ? "Masquer les Commentaires" : "Commentaires" }}
+            </button>
+          </div>
+          <div v-if="taskComments[task.task_name]" class="comments-section">
+            <h5>Commentaires :</h5>
+            <ul>
+              <li v-for="(comment, idx) in taskComments[task.task_name]" :key="idx">
+                <strong>{{ comment.created_at }} :</strong> {{ comment.comment || "Pas de contenu" }}
+              </li>
+            </ul>
           </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -50,6 +55,7 @@ export default {
       username: "",
       tasksByProject: {},
       projectNames: [],
+      taskComments: {}, // Stockage des commentaires par tâche
     };
   },
   computed: {
@@ -96,14 +102,42 @@ export default {
           this.tasksByProject[projectName] = response.data.tasks.map((task) => ({
             ...task,
             date_echeance: task.due_date,
-            nom_projet:projectName,
-            assigned_to: task.assigned_to || [],
+            nom_projet: projectName,
           }));
         }
       } catch (error) {
-        console.error(`Erreur pour le projet ${projectName} :`, error);
+        console.error(`Erreur pour le projet ${projectName}` , error);
       }
     },
+    async toggleComments(taskName) {
+      // Si les commentaires sont déjà chargés, supprimez-les pour replier la section
+      if (this.taskComments[taskName]) {
+        delete this.taskComments[taskName];
+        this.taskComments = { ...this.taskComments }; // Rafraîchit la réactivité
+        return;
+      }
+
+      // Sinon, chargez les commentaires
+      try {
+        const payload = { username: this.username, task_name: taskName };
+        const response = await axios.post("http://127.0.0.1:5000/task/comments", payload);
+
+        if (response.data && Array.isArray(response.data.comments)) {
+          console.log("Commentaires reçus pour", taskName, response.data.comments);
+          this.taskComments = {
+            ...this.taskComments,
+            [taskName]: response.data.comments,
+          };
+          
+        } else {
+          console.error("Aucun commentaire trouvé.", response.data);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des commentaires :", error);
+      }
+    },
+
+
     formatDate(dateString) {
       if (!dateString) return "Non spécifiée";
       const date = new Date(dateString);
@@ -119,51 +153,71 @@ export default {
 };
 </script>
 
+
 <style scoped>
+/* Conteneur principal */
 .task-list-container {
-  padding: 20px;
-  background-color: #f9f9f9;
-  height: 100vh;
+  padding: 30px;
+  background-color: #f0f4f8;
+  min-height: 100vh;
   overflow-y: auto;
+  font-family: 'Roboto', sans-serif;
 }
 
+/* Titre principal */
+.task-list-container h2 {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Résumé des tâches */
 .task-summary {
   display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-  margin-bottom: 20px;
+  justify-content: space-around;
+  margin-bottom: 30px;
+  font-size: 16px;
+  font-weight: 500;
 }
 
+.task-summary p {
+  background-color: #fff;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+  color: #555;
+}
+
+/* Liste des cartes */
 .task-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
 }
 
+/* Carte */
 .card {
-  border: none;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
-.icon {
-  width: 60px;
-  height: 60px;
-  background-color: #3498db;
-  color: #fff;
-  border-radius: 50%;
+/* Contenu des détails */
+.d-flex {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 30px;
+  justify-content: space-between;
 }
 
 .c-details {
@@ -174,36 +228,75 @@ export default {
   font-size: 18px;
   font-weight: bold;
   margin-bottom: 5px;
+  color: #333;
 }
 
 .c-details .project-name,
 .c-details .due-date {
   display: block;
+  font-size: 14px;
+  color: #666;
   margin-bottom: 5px;
 }
 
+/* Badges */
 .badge {
   background-color: #4caf50;
-  color: #fff;
-  padding: 5px 10px;
+  color: white;
+  padding: 5px 15px;
   border-radius: 20px;
   font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 .badge.high-priority {
-  background-color: red;
+  background-color: #e74c3c;
 }
 
+/* Description */
 .description {
-  margin-top: 10px;
+  margin-top: 20px;
   font-size: 14px;
+  line-height: 1.6;
   color: #555;
 }
 
+/* Statistiques */
 .task-stats span {
-  display: block;
   font-size: 14px;
-  margin-top: 5px;
+  font-weight: 600;
   color: #333;
+  margin-top: 10px;
+  display: block;
+}
+
+.comment-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.comment-btn:hover {
+  background-color: #2980b9;
+}
+
+.comments-section {
+  margin-top: 10px;
+  background: #f4f4f4;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.comments-section ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.comments-section li {
+  margin-bottom: 5px;
 }
 </style>

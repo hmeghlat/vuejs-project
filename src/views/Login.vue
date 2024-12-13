@@ -21,7 +21,7 @@
                 <select v-model="role" :class="{'error': errors.role}">
                     <option disabled value="">Select Role</option>
                     <option value="administrateur">administrateur</option>
-                    <option value="chef d'equipe">chef d'equipe</option>
+                    <option value="chef d'équipe">chef d'équipe</option>
                     <option value="utilisateur">utilisateur</option>
                 </select>
                 <span v-if="errors.role" class="error-message">{{ errors.role }}</span>
@@ -48,7 +48,7 @@
                 <select v-model="role" :class="{'error': errors.role}">
                     <option disabled value="">Select Role</option>
                     <option value="administrateur">administrateur</option>
-                    <option value="chef d'equipe">chef d'equipe</option>
+                    <option value="chef d'équipe">chef d'équipe</option>
                     <option value="utilisateur">utilisateur</option>
                 </select>
                 <span v-if="errors.role" class="error-message">{{ errors.role }}</span>
